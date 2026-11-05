@@ -1,0 +1,150 @@
+{
+  "name": "PlacePrep Coach",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "n1",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "placeprep-coach"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are PlacePrep Coach, a friendly, motivating senior who has cracked multiple campus placements and now mentors juniors. Tone: warm, encouraging, a little witty, never condescending. Use simple English.\n\nYOUR TOOLS\n1. interview_kb: our curated bank of interview questions, model answers, and prep tips (HR, technical, aptitude, resume). ALWAYS check it first for any question about interview prep, topics, or answers.\n2. SerpAPI web search: use it ONLY for current/company-specific info (latest hiring pattern, rounds, recent questions, packages, eligibility, dates). Add the current year to your query. Mention that patterns change and students should confirm on the company's official careers page.\n\nHOW TO ANSWER\n- Prep question: search interview_kb, then give a structured answer: (a) what the interviewer is really testing, (b) a model answer or approach, (c) one common mistake.\n- Company question: search the web, then summarise rounds, topics, and difficulty in short bullets. Cite the source name.\n- 'Mock interview' request: ask ONE question at a time, wait for the student's answer, then give a score out of 10 with specific feedback and a better version. Then ask the next question.\n- Vague request (e.g. 'help me prepare'): ask exactly one clarifying question (target company? branch? weak area?).\n- End each reply with a short next step or a motivating line, and keep replies under 200 words unless asked for detail.\n\nRULES\n- Never invent company data. If tools return nothing useful, say so and suggest where to look.\n- Stay on placements and careers. Politely steer off-topic questions back.\n- Never guarantee selection; be honest but encouraging."
+        }
+      },
+      "id": "n2",
+      "name": "PlacePrep Coach",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "n4",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "name": "interview_kb",
+        "description": "Searches the curated placement knowledge base: interview questions with model answers (HR, OOP, DBMS, OS, DSA, aptitude, resume, GD, etiquette). Input: a short keyword query like 'tell me about yourself' or 'dbms normalization'.",
+        "language": "javaScript",
+        "jsCode": "const kb = [{\"tags\": \"tell me about yourself intro hr\", \"q\": \"Tell me about yourself\", \"a\": \"Use Present-Past-Future in 60-90 sec. Present: branch, year, key skill. Past: 1-2 projects/internships with a result. Future: why this role. Mistake: reciting the resume or family background.\"}, {\"tags\": \"strengths weaknesses hr\", \"q\": \"What are your strengths and weaknesses?\", \"a\": \"Pick 2 strengths with proof (e.g. quick learner: built X in 2 weeks). Weakness must be real but fixable, with the steps you are taking (e.g. public speaking: joined a club). Avoid 'I am a perfectionist'.\"}, {\"tags\": \"why should we hire you hr\", \"q\": \"Why should we hire you?\", \"a\": \"Match your skills to the job description, add one proof point, show enthusiasm to learn. Keep it 45 seconds.\"}, {\"tags\": \"5 years goals hr\", \"q\": \"Where do you see yourself in 5 years?\", \"a\": \"Show growth within the company: become strong in the domain, take ownership of projects, maybe mentor others. Avoid mentioning higher studies or switching.\"}, {\"tags\": \"oops oop object oriented technical\", \"q\": \"Four pillars of OOP\", \"a\": \"Encapsulation (bundle data+methods, hide state), Abstraction (expose only essentials), Inheritance (reuse via parent-child), Polymorphism (same interface, different behaviour: overloading/overriding). Give a real example like Vehicle -> Car/Bike.\"}, {\"tags\": \"dbms sql normalization technical\", \"q\": \"Explain normalization and ACID\", \"a\": \"Normalization reduces redundancy: 1NF atomic values, 2NF no partial dependency, 3NF no transitive dependency. ACID = Atomicity, Consistency, Isolation, Durability. Be ready with a bank-transfer example.\"}, {\"tags\": \"os process thread deadlock technical\", \"q\": \"Process vs thread, and deadlock\", \"a\": \"Process has its own memory; threads share memory within a process. Deadlock needs 4 conditions: mutual exclusion, hold and wait, no preemption, circular wait. Break any one to prevent it.\"}, {\"tags\": \"dsa array linked list sorting coding technical\", \"q\": \"Top DSA topics for placements\", \"a\": \"Arrays, strings, hashing, two pointers, sorting/searching, linked list, stack/queue, recursion, trees, basic DP. Practice 150-200 problems on LeetCode/GeeksforGeeks; focus on easy-medium.\"}, {\"tags\": \"aptitude quant reasoning verbal\", \"q\": \"Aptitude preparation plan\", \"a\": \"Quant: percentages, profit-loss, time-work, speed-distance, P&C. Reasoning: series, seating, blood relations, puzzles. Verbal: reading comprehension, grammar. Do 30 min daily and timed mock tests weekly. Accuracy first, then speed.\"}, {\"tags\": \"resume cv projects\", \"q\": \"How to build a good fresher resume\", \"a\": \"One page, ATS-friendly, no photo. Order: education, skills, projects (with tech + measurable result), internships, achievements. Use action verbs. Every project line should answer: what, how, impact. Be ready to explain every word.\"}, {\"tags\": \"project explain technical hr\", \"q\": \"Explain your project\", \"a\": \"Structure: problem, your role, tech stack and why, biggest challenge and how you solved it, result, what you'd improve. Expect follow-ups on database, APIs, and edge cases.\"}, {\"tags\": \"group discussion gd\", \"q\": \"Group discussion tips\", \"a\": \"Open with a fact or definition, listen, build on others' points, stay calm, keep each point under 30 sec, summarise if you can. Quality beats volume; avoid interrupting.\"}, {\"tags\": \"questions to ask interviewer end\", \"q\": \"Do you have any questions for us?\", \"a\": \"Always ask 1-2: What does training look like for freshers? What does success look like in the first 6 months? Never ask about salary or leave first.\"}, {\"tags\": \"dress code body language etiquette\", \"q\": \"Interview etiquette\", \"a\": \"Formals, reach 15 min early, firm handshake, eye contact, keep documents in a folder, thank the panel. Be honest: say 'I don't know, but I would approach it by...' instead of bluffing.\"}];\n\nconst q = String(query || '').toLowerCase().split(/\\s+/).filter(w => w.length > 2);\nconst scored = kb.map(e => {\n  const hay = (e.tags + ' ' + e.q + ' ' + e.a).toLowerCase();\n  return { e, s: q.reduce((n, w) => n + (hay.includes(w) ? 1 : 0), 0) };\n}).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 3);\nif (!scored.length) return 'No match in knowledge base. Try web search or ask the student to clarify.';\nreturn scored.map(x => 'Q: ' + x.e.q + '\\nA: ' + x.e.a).join('\\n\\n');\n"
+      },
+      "id": "n5",
+      "name": "interview_kb",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "n6",
+      "name": "SerpAPI",
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "PlacePrep Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "PlacePrep Coach",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "PlacePrep Coach",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "interview_kb": {
+      "ai_tool": [
+        [
+          {
+            "node": "PlacePrep Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "PlacePrep Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
